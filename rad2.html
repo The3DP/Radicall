@@ -1,1 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enhanced Chat</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      width: 400px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      text-align: center;
+    }
+    #chat {
+      display: none;
+      flex-direction: column;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #fafafa;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+    #messageInput {
+      width: calc(100% - 60px);
+      padding: 8px;
+    }
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .message {
+      margin-bottom: 5px;
+    }
+    .timestamp {
+      font-size: 0.75em;
+      color: gray;
+      margin-left: 5px;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Login to Chat</h2>
+    <div id="loginForm">
+      <input type="text" id="username" placeholder="Enter your name" autofocus />
+      <button onclick="login()">Login</button>
+    </div>
 
+    <div id="chat">
+      <h3>Welcome, <span id="userLabel"></span>!</h3>
+      <div id="messages"></div>
+      <div class="input-group">
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = '';
+
+    function login() {
+      const usernameInput = document.getElementById('username');
+      const username = usernameInput.value.trim();
+      if (!username) {
+        alert('Please enter a valid name.');
+        return;
+      }
+      currentUser = username;
+      document.getElementById('userLabel').textContent = currentUser;
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('chat').style.display = 'flex';
+      document.getElementById('messageInput').focus();
+    }
+
+    function sendMessage() {
+      const messageBox = document.getElementById('messageInput');
+      const message = messageBox.value.trim();
+      if (!message) return;
+
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const chatBox = document.getElementById('messages');
+      const newMessage = document.createElement('div');
+      newMessage.className = 'message';
+      newMessage.innerHTML = `<strong>${currentUser}</strong>: ${message} <span class="timestamp">${timestamp}</span>`;
+      chatBox.appendChild(newMessage);
+      messageBox.value = '';
+      messageBox.focus();
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    document.getElementById('messageInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    document.getElementById('username').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
+  </script>
+</body>
+</html>
