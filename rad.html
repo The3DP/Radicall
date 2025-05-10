@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Chat Login</title>
+  <style>
+    body { font-family: Arial; }
+    #chat, #messageInput { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Login to Chat</h2>
+  <input type="text" id="username" placeholder="Enter your name" />
+  <button onclick="login()">Login</button>
 
+  <div id="chat">
+    <h3>Chat Room</h3>
+    <div id="messages" style="border:1px solid #ccc; height:200px; overflow-y:auto; margin-bottom:10px;"></div>
+    <input type="text" id="messageInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    let currentUser = '';
+
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      if (username) {
+        currentUser = username;
+        document.getElementById('chat').style.display = 'block';
+        document.getElementById('username').style.display = 'none';
+        event.target.style.display = 'none';
+        document.getElementById('messageInput').style.display = 'inline';
+      }
+    }
+
+    function sendMessage() {
+      const messageBox = document.getElementById('messageInput');
+      const message = messageBox.value.trim();
+      if (message) {
+        const chatBox = document.getElementById('messages');
+        const newMessage = document.createElement('div');
+        newMessage.textContent = currentUser + ': ' + message;
+        chatBox.appendChild(newMessage);
+        messageBox.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
