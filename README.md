@@ -1,7 +1,7 @@
 <p align="center"> Radicall
 
 ##  
-Radicall is a easy, original, hackable chat base designed to send simple messages.
+Radicall is a simple and hackable chat base designed to send simple messages.
 ##
 >RTS
 ##
