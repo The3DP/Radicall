@@ -1,1 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Chat</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f7f9fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 24px;
+      width: 95%;
+      max-width: 480px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 3px #007bff55;
+    }
+
+    button {
+      padding: 10px 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #chat {
+      display: none;
+      flex-direction: column;
+    }
+
+    #messages {
+      border: 1px solid #ccc;
+      height: 260px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #fafafa;
+      margin-bottom: 12px;
+      border-radius: 6px;
+    }
+
+    .message {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .timestamp {
+      font-size: 0.75rem;
+      color: #888;
+      margin-left: 6px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-group input {
+      flex: 1;
+    }
+
+    .top-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .logout-btn {
+      background-color: #dc3545;
+    }
+
+    .logout-btn:hover {
+      background-color: #c82333;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 16px;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section id="loginSection" aria-label="Login form">
+      <h1>Login to Smart Chat</h1>
+      <label for="username">Your Name:</label>
+      <input type="text" id="username" placeholder="Enter your name" autofocus />
+      <button id="loginBtn">Login</button>
+    </section>
+
+    <section id="chat" aria-label="Chat window">
+      <div class="top-controls">
+        <h2>Hello, <span id="userLabel"></span>!</h2>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+      <div id="messages" role="log" aria-live="polite"></div>
+      <div class="input-group">
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button id="sendBtn">Send</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'chatMessages';
+      const USER_KEY = 'chatUser';
+
+      const loginSection = document.getElementById('loginSection');
+      const chatSection = document.getElementById('chat');
+      const usernameInput = document.getElementById('username');
+      const messageInput = document.getElementById('messageInput');
+      const messagesDiv = document.getElementById('messages');
+      const userLabel = document.getElementById('userLabel');
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const sendBtn = document.getElementById('sendBtn');
+
+      let currentUser = '';
+
+      const loadMessages = () => {
+        const messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        messages.forEach(addMessageToUI);
+        scrollToBottom();
+      };
+
+      const scrollToBottom = () => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      };
+
+      const addMessageToUI = ({ user, message, timestamp }) => {
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message';
+
+        const safeUser = document.createElement('strong');
+        safeUser.textContent = user;
+
+        const safeMessage = document.createTextNode(`: ${message} `);
+
+        const time = document.createElement('span');
+        time.className = 'timestamp';
+        time.textContent = timestamp;
+
+        messageEl.appendChild(safeUser);
+        messageEl.appendChild(safeMessage);
+        messageEl.appendChild(time);
+
+        messagesDiv.appendChild(messageEl);
+      };
+
+      const saveMessage = (chatMessage) => {
+        const messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        messages.push(chatMessage);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      };
+
+      const sendMessage = () => {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        const timestamp = new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        const chatMessage = { user: currentUser, message, timestamp };
+        saveMessage(chatMessage);
+        addMessageToUI(chatMessage);
+
+        messageInput.value = '';
+        messageInput.focus();
+        scrollToBottom();
+      };
+
+      const login = () => {
+        const name = usernameInput.value.trim();
+        if (!name) {
+          alert('Please enter a valid name.');
+          return;
+        }
+
+        currentUser = name;
+        localStorage.setItem(USER_KEY, name);
+        userLabel.textContent = currentUser;
+
+        loginSection.style.display = 'none';
+        chatSection.style.display = 'flex';
+        messageInput.focus();
+
+        loadMessages();
+      };
+
+      const logout = () => {
+        if (confirm('Are you sure you want to logout?')) {
+          localStorage.removeItem(USER_KEY);
+          location.reload();
+        }
+      };
+
+      // Load session if available
+      window.addEventListener('DOMContentLoaded', () => {
+        const savedUser = localStorage.getItem(USER_KEY);
+        if (savedUser) {
+          currentUser = savedUser;
+          userLabel.textContent = currentUser;
+          loginSection.style.display = 'none';
+          chatSection.style.display = 'flex';
+          messageInput.focus();
+          loadMessages();
+        }
+      });
+
+      // Event listeners
+      loginBtn.addEventListener('click', login);
+      logoutBtn.addEventListener('click', logout);
+      sendBtn.addEventListener('click', sendMessage);
+
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+
+      usernameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') login();
+      });
+    })();
+  </script>
+</body>
+</html>
