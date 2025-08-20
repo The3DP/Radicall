@@ -1,1 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Professional Chat</title>
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --primary-dark: #0056b3;
+      --danger-color: #dc3545;
+      --danger-dark: #c82333;
+      --bg-light: #eef2f7;
+      --bg-dark: #1e1e1e;
+      --text-light: #fff;
+      --text-dark: #333;
+    }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-light);
+      color: var(--text-dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2, h3 {
+      text-align: center;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 15px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+
+    #chat {
+      display: none;
+      flex-direction: column;
+    }
+
+    #messages {
+      border: 1px solid #ccc;
+      height: 250px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 0.95em;
+    }
+
+    .message {
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .timestamp {
+      font-size: 0.75em;
+      color: gray;
+      margin-left: 6px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    #messageInput {
+      flex: 1;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: var(--primary-color);
+      color: white;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .logout-btn {
+      background-color: var(--danger-color);
+    }
+
+    .logout-btn:hover {
+      background-color: var(--danger-dark);
+    }
+
+    .top-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .user-info {
+      font-size: 0.9em;
+      color: #555;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px;
+      }
+      .top-controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container" aria-live="polite">
+    <h2>Welcome to ProChat</h2>
+
+    <section id="loginForm" role="form" aria-label="Login form">
+      <label for="name">Your Name</label>
+      <input type="text" id="name" placeholder="Enter your name" autocomplete="name" required />
+
+      <label for="email">Email Address</label>
+      <input type="email" id="email" placeholder="Enter your email" autocomplete="email" required />
+
+      <button onclick="login()">Enter Chat</button>
+    </section>
+
+    <section id="chat" role="region" aria-label="Chat interface">
+      <div class="top-controls">
+        <h3>Chat Room</h3>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+      <div class="user-info">
+        Logged in as: <strong id="userLabel"></strong>
+      </div>
+      <div id="messages" aria-live="polite" tabindex="0"></div>
+
+      <div class="input-group">
+        <input type="text" id="messageInput" placeholder="Type your message..." aria-label="Message input" />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'chatMessages';
+    const USER_KEY = 'chatUser';
+    const MAX_MESSAGES = 100;
+
+    let currentUser = {};
+
+    window.onload = () => {
+      const savedUser = JSON.parse(localStorage.getItem(USER_KEY));
+      const savedMessages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+      if (savedUser?.name && savedUser?.email) {
+        currentUser = savedUser;
+        showChat(savedMessages);
+      }
+    };
+
+    function login() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      if (!name || !email) {
+        alert('Please enter both name and email.');
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        alert('Please enter a valid email address.');
+        return;
+      }
+
+      currentUser = { name, email };
+      localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+      showChat(JSON.parse(localStorage.getItem(STORAGE_KEY)) || []);
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to log out?')) {
+        localStorage.removeItem(USER_KEY);
+        location.reload();
+      }
+    }
+
+    function showChat(messages) {
+      document.getElementById('userLabel').textContent = `${currentUser.name} (${currentUser.email})`;
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('chat').style.display = 'flex';
+      messages.forEach(addMessageToUI);
+      scrollToBottom();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const chatMessage = {
+        user: currentUser.name,
+        email: currentUser.email,
+        message: sanitize(message),
+        timestamp
+      };
+
+      saveMessage(chatMessage);
+      addMessageToUI(chatMessage);
+      input.value = '';
+      input.focus();
+      scrollToBottom();
+    }
+
+    function saveMessage(msg) {
+      const messages = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      messages.push(msg);
+      if (messages.length > MAX_MESSAGES) messages.shift();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    }
+
+    function addMessageToUI({ user, message, timestamp }) {
+      const chatBox = document.getElementById('messages');
+      const newMessage = document.createElement('div');
+      newMessage.className = 'message';
+      newMessage.innerHTML = `<strong>${user}</strong>: ${message} <span class="timestamp">${timestamp}</span>`;
+      chatBox.appendChild(newMessage);
+    }
+
+    function scrollToBottom() {
+      const chatBox = document.getElementById('messages');
+      setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 100);
+    }
+
+    function validateEmail(email) {
+      const re = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      return re.test(email.toLowerCase());
+    }
+
+    function sanitize(input) {
