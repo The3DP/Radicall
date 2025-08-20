@@ -1,4 +1,7 @@
-<p align="center"> Radicall
+## NOTE: Product.html is not fully complete.
+
+
+# Radicall
 
 ##  
 Radicall is a simple and hackable chat base designed to send simple messages.
