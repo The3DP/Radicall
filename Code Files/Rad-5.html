@@ -1,1 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Radicall - Enhanced Chat</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      height: 90vh;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: #007bff;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .brand {
+      font-size: 1.8em;
+      font-weight: bold;
+      background: linear-gradient(to right, #ffffff, #cce1ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    form#loginForm {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 24px;
+      justify-content: center;
+    }
+
+    #loginForm input {
+      padding: 12px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #loginForm button {
+      padding: 12px;
+      font-size: 1em;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #loginForm button:hover {
+      background: #0056b3;
+    }
+
+    #chat {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: #f9f9f9;
+    }
+
+    .message {
+      display: flex;
+      margin-bottom: 12px;
+      transition: transform 0.2s ease;
+    }
+
+    .message:hover {
+      transform: scale(1.01);
+    }
+
+    .message.self {
+      justify-content: flex-end;
+    }
+
+    .content {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #007bff;
+      color: #fff;
+      position: relative;
+    }
+
+    .message.self .content {
+      background: #28a745;
+    }
+
+    .timestamp {
+      font-size: 0.75em;
+      color: #e0e0e0;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    #inputArea {
+      display: flex;
+      padding: 12px;
+      border-top: 1px solid #ccc;
+      background: #fff;
+      gap: 8px;
+    }
+
+    #inputArea input {
+      flex: 1;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    #inputArea button {
+      padding: 10px 16px;
+      font-size: 1em;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #inputArea button:hover {
+      background: #0056b3;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      font-size: 0.95em;
+      margin-top: 24px;
+    }
+
+    @media (max-height: 600px) {
+      .container {
+        height: 100vh;
+        border-radius: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="brand">Radicall</span>
+    </header>
+
+    <form id="loginForm" aria-label="Login Form">
+      <input type="email" id="email" placeholder="Email" required aria-label="Email" />
+      <input type="password" id="password" placeholder="Password" required aria-label="Password" />
+      <button type="submit">Login</button>
+    </form>
+
+    <div id="chat" role="region" aria-label="Chat Area">
+      <div id="messages"></div>
+      <div class="empty-state" id="emptyState">No messages yet. Start the conversation!</div>
+      <div id="inputArea">
+        <input type="text" id="messageInput" placeholder="Type a message..." aria-label="Message input" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const chat = document.getElementById('chat');
+    const messagesContainer = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const emptyState = document.getElementById('emptyState');
+    const sendBtn = document.getElementById('sendBtn');
+
+    let currentUser = null;
+    let messages = [];
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (email && password) {
+        currentUser = { email };
+        loginForm.style.display = 'none';
+        chat.style.display = 'flex';
+        renderMessages();
+      } else {
+        alert('Please enter both email and password.');
+      }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const timestamp = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const message = {
+        user: currentUser.email,
+        text,
+        timestamp
+      };
+
+      messages.push(message);
+      renderMessages();
+      messageInput.value = '';
+    }
+
+    function renderMessages() {
+      messagesContainer.innerHTML = '';
+      emptyState.style.display = messages.length === 0 ? 'block' : 'none';
+
+      messages.forEach((msg) => {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'message' + (msg.user === currentUser.email ? ' self' : '');
+        msgEl.innerHTML = `
+          <div class="content">
+            <div>${msg.text}</div>
+            <div class="timestamp">${msg.timestamp}</div>
+          </div>
+        `;
+        messagesContainer.appendChild(msgEl);
+      });
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+  </script>
+</body>
+</html>
