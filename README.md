@@ -3,7 +3,6 @@
   
 ### Radicall is a simple and hackable chat base designed to send simple messages.
 
-> # RTS
 
 Recommended Testing Sites (RTS) 
 Are sites that I test these codes on
